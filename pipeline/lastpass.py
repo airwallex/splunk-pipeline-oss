@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""LastPass audit logs"""
+
+from pipeline.common.config import CONFIG
+from secops_common.secrets import read_config
+from secops_common.logsetup import logger
+from pipeline.common.splunk import publish, retryable
+from pipeline.common.functional import partition
+from pipeline.common.time import unix_time_millis
+from pipeline.common.fetch import last_n_24hours, last_n_minutes, last_from_persisted, mark_last_fetch, Unit, into_unit
+
+import requests
+import math
+
+# Timestamp handling
+from datetime import datetime, timedelta, timezone
+import pytz
+
+# UI
+import pprint
+import click
+
+pp = pprint.PrettyPrinter(indent=4)
+
+project_id = CONFIG['project_id']
+
+token = read_config(project_id, 'lastpass')['token']
+splunk_token = read_config(project_id, 'lastpass')['splunk']
+LIMIT = 1000
+
+url = 'https://lastpass.com/enterpriseapi.php'
+headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+org_id = CONFIG['lastpass_org_id']
+
+lastpass_tz = pytz.timezone('Asia/Singapore')
+
+
+def get_results(response):
+    if response == None:
+        return None
+    elif response.status_code != 200:
+        logger.warning(f'Received {response.status_code} from API')
+        return None
+    else:
+        # print(response.content)
+        return response.json()
+
+
+def into_lastpass_date(dt):
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def from_lastpass_date(created):
+    dt = datetime.strptime(created, '%Y-%m-%d %H:%M:%S')
+    local_dt = lastpass_tz.localize(dt, is_dst=None)
+    return unix_time_millis(local_dt.astimezone(timezone.utc))
+
+
+def _get_lastpass_audit_logs(data):
+    logger.debug(f'Getting instance audit events')
+    response = requests.post(url, headers=headers, json=data)
+    logger.debug(f'Getting first page for {url}...')
+    json_resp = get_results(response)
+
+    if not json_resp:
+        return []
+
+    # lastpass has a list represented as a dict with keys "Event1", "Event2", etc..
+    # this is a gross hack on their end, so we implement a hack to more nicely format the events
+    curr_results_lp_hack = json_resp['data']
+    curr_results = [curr_results_lp_hack[x] for x in curr_results_lp_hack]
+    logger.debug(f'Got {len(curr_results)} results')
+
+    results = curr_results
+    next_id = json_resp['next']
+
+    while next_id:
+        logger.info('Getting next page with ID {}...'.format(next_id))
+        data['data']['next'] = next_id
+        response = requests.post(url, headers=headers, json=data)
+        json_resp = get_results(response)
+        curr_results_lp_hack = json_resp['data']
+        curr_results = [curr_results_lp_hack[x] for x in curr_results_lp_hack]
+        next_id = json_resp['next']
+        logger.debug(f'Got {len(curr_results)} results')
+
+        results.extend(curr_results)
+
+    return results
+
+
+def _get_logs(start, end):
+    logger.info(f'Getting logs from lastpass for {start} - {end}')
+    data = {
+        'cid': org_id,
+        'provhash': token,
+        'cmd': 'reporting',
+        'data': {
+            'from': into_lastpass_date(start),
+            'to': into_lastpass_date(end),
+        }
+    }
+    results = _get_lastpass_audit_logs(data)
+
+    logger.debug(f'Total of {len(results)} logs fetched in _get_logs LastPass')
+    return results
+
+
+def with_time(log):
+    log['timestamp'] = from_lastpass_date(log['Time'])
+    return log
+
+
+def _publish_lastpass_logs(num, unit):
+    time_unit = into_unit(unit)
+    if int(num) > 0:
+        logger.info(f'Publishing LastPass logs for {num} {unit}')
+        if time_unit == Unit.days:
+            logs, _, _ = last_n_24hours(int(num), _get_logs, tz=lastpass_tz)
+
+        elif time_unit == Unit.minutes:
+            logs, _, _ = last_n_minutes(int(num), _get_logs, tz=lastpass_tz)
+
+    else:
+        logger.info(
+            f'Publishing LastPass logs from last persisted range using time unit of {unit}'
+        )
+        logs, start, end = last_from_persisted(time_unit,
+                                               _get_logs,
+                                               'lastpass_log_fetch',
+                                               tz=lastpass_tz)
+
+    logger.info(f'Total of {len(logs)} fetched from LastPass')
+    timed_logs = list(map(with_time, logs))
+    batches = partition(timed_logs, 50)
+    http = retryable()
+    for batch in batches:
+        publish(http, batch, splunk_token, time_field='timestamp')
+
+    if (len(logs) > 0):
+        logger.info(
+            f'Total of {len(logs)} persisted into Splunk from Lastpass')
+
+    if int(num) < 0:
+        mark_last_fetch(start, end, True, 'lastpass_log_fetch')
+
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option("--num", required=True)
+@click.option("--unit", required=True)
+def get_logs(num, unit):
+    time_unit = into_unit(unit)
+    if time_unit == Unit.days:
+        logs, _, _ = last_n_24hours(int(num), _get_logs, tz=lastpass_tz)
+
+    elif time_unit == Unit.minutes:
+        logs, _, _ = last_n_minutes(int(num), _get_logs, tz=lastpass_tz)
+
+    timed_logs = list(map(with_time, logs))
+    pp.pprint(timed_logs)
+
+
+@cli.command()
+@click.option("--num", required=True)
+@click.option("--unit", required=True)
+def publish_logs(num, unit):
+    _publish_lastpass_logs(num, unit)
+
+
+if __name__ == '__main__':
+    cli()

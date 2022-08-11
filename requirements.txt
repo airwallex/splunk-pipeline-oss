@@ -1,0 +1,40 @@
+# GCP
+google-cloud-recommender == 2.0.0
+google-cloud-core == 1.5.0
+google-cloud-resource-manager == 0.30.3
+google-cloud-securitycenter == 1.1.0
+google-cloud-logging == 2.6.0
+
+# Discovery
+google-api-python-client == 1.12.8
+
+# Server pubsub
+google-cloud-pubsub == 2.3.0
+
+# BigQuery
+google-cloud-bigquery == 2.34.3
+
+# Cli UI
+click == 7.1.2
+
+# http api
+requests == 2.25.1
+
+# Logging
+python-json-logger == 2.0.1
+
+# Cloud function
+google-cloud-secret-manager == 2.2.0
+
+
+# Google spreadsheets/workspace
+google-api-python-client == 1.12.8
+google-auth-httplib2 == 0.0.4
+google-auth-oauthlib == 0.4.4
+python-dateutil == 2.7.3
+
+# Python indent
+yapf == 0.31.0
+
+# Yaml
+pyyaml == 6.0

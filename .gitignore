@@ -1,0 +1,5 @@
+.env
+pipeline.yaml
+secrets
+pipeline.egg-info
+secops_common
