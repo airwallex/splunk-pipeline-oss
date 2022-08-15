@@ -5,7 +5,7 @@ In order to develop locally we need to clone 2 repos:
 ```bash
 $ git clone https://github.com/airwallex/splunk-pipeline-oss
 $ cd splunk-pipeline-oss
-$ git clone https://github.com/airwallex/secops_common
+$ git clone https://github.com/airwallex/secops-common secops_common
 ```
 
 Install the dependencies:
