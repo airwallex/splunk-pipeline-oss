@@ -41,6 +41,8 @@ from pipeline.maxmind import _publish_and_download_maxmind
 # Bamboo
 from pipeline.bamboo import _publish_and_download_bamboo
 
+# Intune_AZ 
+from pipeline.ms_graph_inventory import _publish_and_download_intune
 
 class Service(Enum):
     confluence = auto()
@@ -52,6 +54,7 @@ class Service(Enum):
     gmail = auto()
     maxmind = auto()
     bamboo = auto()
+    ms_graph_inventory = auto() 
 
 
 def into_service(string):
@@ -78,6 +81,8 @@ def trigger_processing(payload):
         _publish_and_download_maxmind()
     elif service == Service.bamboo:
         _publish_and_download_bamboo()
+    elif service == Service.ms_graph_inventory:
+        _publish_and_download_intune()
 
 
 """ Processing messages in the cloud function:

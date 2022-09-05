@@ -38,3 +38,7 @@ yapf == 0.31.0
 
 # Yaml
 pyyaml == 6.0
+
+# MS Azure auth
+msgraph-core == 0.2.2
+azure-identity == 1.10.0

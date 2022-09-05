@@ -40,18 +40,32 @@ def retryable():
     http.mount('https://', HTTPAdapter(max_retries=retries))
     return http
 
+def get_clear_sourcetype(record,sourcetype_field):
+    #grabs the sourcetype value and unsets it in the record to be then set in event metadata
+    if(sourcetype_field):
+        sourcetype_value=record[sourcetype_field]
+        del record[sourcetype_field]
+        return sourcetype_value
+    else:
+        return None
+    
 
-def into_event(time_field, record):
+
+def into_event(time_field, sourcetype_field, record):
+    # https://docs.splunk.com/Documentation/Splunk/9.0.1/Data/HECExamples
+    # wraps the records into an event and adds event metadata for time and sourcetype
+    sourcetype_value=get_clear_sourcetype(record,sourcetype_field)
     event = {'event': record}
     if (time_field != None):
         event['time'] = record[time_field]
-
+    if (sourcetype_field != None):
+        event['sourcetype'] = sourcetype_value
     return json.dumps(event)
 
 
-def publish(http, events, token, time_field=None):
+def publish(http, events, token, time_field=None, sourcetype_field=None):
     authHeader = {'Authorization': f'Splunk {token}'}
-    payload = ''.join(list(map(partial(into_event, time_field), events)))
+    payload = ''.join(list(map(partial(into_event, time_field,sourcetype_field), events)))
     logger.debug(f'payload consists of {len(events)} events')
 
     r = http.post(SPLUNK_HEC_URL,
