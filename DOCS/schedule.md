@@ -20,8 +20,7 @@ $ ./secops_common/bin/schedule splunk-pipeline-google_workspace_drive "*/5 * * *
 
 $ ./secops_common/bin/schedule splunk-pipeline-gmail "*/5 * * * *" '{"service":"gmail"}'
 
-$ ./secops_common/bin/schedule splunk-pipeline-gmail "*/20 * * * *" '{"service":"ms_graph_inventory"}'
-
+$ ./secops_common/bin/schedule splunk-pipleline-ms_graph_inventory "*/20 * * * *" '{"service":"ms_graph_inventory"}'
 ```
 
 
