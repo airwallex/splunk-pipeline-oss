@@ -54,6 +54,8 @@ setopt histignorespace
  ./secops_common/bin/add_secret gmail "{'splunk':<token>}"
 
  ./secops_common/bin/add_secret bamboo "{'token': <token>, 'splunk':<token>}"
+
+ ./secops_common/bin/add_secret 'ms_graph_api_aad_intune' '{"tenant_id":"xxxxxxxxxxx","client_id":"xxxxxxxxxxxxx","app_secret":"xxxxxxxxxxxxxx,"secret_id":"xxxxxxxxxxxxxxx","splunk":"<token>"}'
 ```
 
 
@@ -85,3 +87,14 @@ For admin api a token can be generated at https://admin.atlassian.com/o/[your id
 
 All other tokens (Jira, Confluence API) can be generated the [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens) page.
 
+# MS Graph API Inventory
+
+Get the details from portal azure registered apps - you will need the tenant_id, client_id (app_id), secret_id and app_secret (secret value). 
+
+It's intended to work with app secret from an azure ad registered app you make and grant graph api permissions 
+
+It's up to you how specific or general you want the permissions to be - 
+
+some guidance is provided here - by default the script will use Graph condidential client application permissions: 
+[groups](https://docs.microsoft.com/en-us/graph/api/group-list?view=graph-rest-1.0&tabs=http#permissions), [users](https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http#permissions),
+[devices](https://docs.microsoft.com/en-us/graph/api/device-list?view=graph-rest-1.0&tabs=http#permissions), [managed devices](https://docs.microsoft.com/en-us/graph/api/intune-devices-manageddevice-list?view=graph-rest-1.0)
