@@ -66,7 +66,12 @@ def graph_generator_f(graph_client, endpoint=None, max_page=3):
     while endpoint and (max_page == 0 or page_num <= max_page):
         logger.info(f'Retrieving page number: {page_num} from url: {endpoint}')
         response_raw = graph_client.get(endpoint).json()
-        logger.debug(f'response_raw: {str(response_raw)[1:500]}')
+        if "value" in response_raw:
+            logger.debug(f'response_raw: {str(response_raw)[1:500]}')
+        else:
+            logger.error(
+                f'unable to find a valid graph api response: {str(response_raw)[1:500]}'
+            )
 
         page_records_batch = response_raw["value"]
         cumulative_item_count += len(page_records_batch)
