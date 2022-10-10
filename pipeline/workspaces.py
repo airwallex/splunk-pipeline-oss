@@ -261,9 +261,9 @@ def get_logs(type, num, unit):
         logs, start, end = last_from_persisted_windowed(
             partial(_get_logs, type), f'workspace_{type}_log_fetch')
 
-    logger.info(
-        f'Total of {len(logs)} fetched from Google workspace {type} for {start} - {end} range'
-    )
+        logger.info(
+           f'Total of {len(logs)} fetched from Google workspace {type} for {start} - {end} range'
+        )
 
 
 if __name__ == '__main__':
