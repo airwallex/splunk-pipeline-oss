@@ -14,7 +14,7 @@ from secops_common.secrets import read_config
 from secops_common.misc import serialize
 
 # Splunk KV
-from pipeline.common.splunk import insert_batch_kv, empty_collection, retryable
+from pipeline.common.splunk import insert_batch_kv, empty_collection, retryable, publish
 
 from pipeline.common.functional import partition
 
@@ -31,7 +31,9 @@ project_id = CONFIG['project_id']
 
 bamboo_token = read_config(project_id, 'bamboo')['token']
 
-splunk_token = read_config(project_id, 'splunk_api')['token']
+splunk_api_token = read_config(project_id, 'splunk_api')['token']
+
+splunk_token = read_config(project_id, 'bamboo')['splunk']
 
 import importlib
 
@@ -81,11 +83,15 @@ def _fetch():
 def _process(records):
     http = retryable()
     logger.info('Emptying kv_hr_info')
-    empty_collection(http, 'kv_hr_info', splunk_token)
+    empty_collection(http, 'kv_hr_info', splunk_api_token)
     batches = partition(list(records), 100)
     logger.info(f'Populating kv_hr_info')
+
     for batch in batches:
-        insert_batch_kv(http, 'kv_hr_info', batch, splunk_token)
+        insert_batch_kv(http, 'kv_hr_info', batch, splunk_api_token)
+
+    for batch in batches:
+        publish(http, batch, splunk_token)
 
 
 @cli.command()

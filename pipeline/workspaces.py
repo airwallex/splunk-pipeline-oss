@@ -262,7 +262,7 @@ def get_logs(type, num, unit):
             partial(_get_logs, type), f'workspace_{type}_log_fetch')
 
         logger.info(
-           f'Total of {len(logs)} fetched from Google workspace {type} for {start} - {end} range'
+            f'Total of {len(logs)} fetched from Google workspace {type} for {start} - {end} range'
         )
 
 
