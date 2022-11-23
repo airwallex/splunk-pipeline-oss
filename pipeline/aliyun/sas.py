@@ -5,7 +5,7 @@
 from aliyunsdkcore.acs_exception.exceptions import ClientException
 from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdksas.request.v20181203 import DescribeAlarmEventListRequest
-from aliyunsdkecs.request.v20140526 import DescribeInstancesRequest
+from aliyunsdksas.request.v20181203 import DescribeSuspEventDetailRequest
 from pipeline.common.fetch import last_n_24hours, last_n_minutes, last_from_persisted, mark_last_fetch, Unit, into_unit
 
 # Logging
@@ -15,7 +15,7 @@ import click
 from secops_common.logsetup import logger, enable_logfile
 
 # Aliyun
-from pipeline.aliyun.client import fetch_with_count_2, initialize_client, fetch_with_count, fetch_with_token
+from pipeline.aliyun.client import fetch_with_count_2, initialize_client, fetch_with_count, fetch_with_token, fetch_all
 from datetime import datetime
 
 from functools import partial
@@ -36,6 +36,19 @@ def vuln_row(stamp, level, vuln):
         extended['OsRelease'], level, stamp
     ]
 
+def _fetch_event(client, id):
+  request = DescribeSuspEventDetailRequest.DescribeSuspEventDetailRequest()
+  request.set_From('sas')
+  request.set_SuspiciousEventId(id)
+  return fetch_all(client, request, lambda response: response)
+
+def _get_events(alarm):
+    client = initialize_client(region='cn-hangzhou')
+    ids = alarm['SecurityEventIds']
+    if(isinstance(ids, list)):
+      return list(map(partial(_fetch_event, client), ids))
+    else:
+      return [_fetch_event(client, ids)]
 
 def _get_alarms(start, end):
     client = initialize_client(region='cn-hangzhou')
@@ -48,6 +61,10 @@ def _get_alarms(start, end):
     return fetch_with_count_2(client, request,
                               lambda response: response['SuspEvents'])
 
+def add_events(alarm):
+    alarm['Events'] = _get_events(alarm)
+    return alarm
+
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
@@ -55,15 +72,14 @@ def get_alarms(num, unit):
     time_unit = into_unit(unit)
 
     if (time_unit == Unit.days):
-         logs, _, _ = last_n_24hours(int(num), _get_alarms)
+         alarms, _, _ = last_n_24hours(int(num), _get_alarms)
 
     elif (time_unit == Unit.minutes):
-         logs, _, _ = last_n_minutes(int(num), _get_alarms)
+         alarms, _, _ = last_n_minutes(int(num), _get_alarms)
 
-    for log in logs:
-        print(log)
+    with_events = list(map(add_events, alarms)
 
-    logger.info(f'Total of {len(logs)} fetched from Aliyn')
+    logger.info(f'Total of {len(alarms)} fetched from Aliyn')
 
 
 if __name__ == '__main__':
