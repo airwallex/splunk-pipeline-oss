@@ -32,11 +32,24 @@ SYNC_SCHEMA = [
                          description='Bigquery record creation time')
 ]
 
+DEDUP_SCHEMA = [
+    bigquery.SchemaField('id',
+                         'string',
+                         mode='REQUIRED',
+                         description='The event/log id'),
+    bigquery.SchemaField('created_at',
+                         'TIMESTAMP',
+                         mode='REQUIRED',
+                         description='Bigquery record creation time')
+]
 
 def into_schema(products):
     return dict(
         list(
             map(lambda product: (f'{product}_log_fetch', SYNC_SCHEMA),
+                products)) +
+        list(
+            map(lambda product: (f'{product}_log_dedup', DEDUP_SCHEMA),
                 products)))
 
 
@@ -48,7 +61,7 @@ AUDITS = [
 WORKSPACE = into_schema(map(lambda product: f'workspace_{product}', AUDITS))
 
 PRODUCTS = into_schema(
-    ['jira', 'confluence', 'atlassian', 'lastpass', 'gmail'])
+    ['jira', 'confluence', 'atlassian', 'lastpass', 'gmail', 'aliyun_sas'])
 
 SPREAD = {
     'spreadsheet_tracking': [

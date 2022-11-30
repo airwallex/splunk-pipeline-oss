@@ -18,6 +18,9 @@ from secops_common.logsetup import logger, enable_logfile
 from pipeline.aliyun.client import fetch_with_count_2, initialize_client, fetch_with_count, fetch_with_token, fetch_all
 from datetime import datetime
 
+# dedup
+from pipeline.common.dedup import new_events, mark_events
+
 from functools import partial
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -78,6 +81,7 @@ def get_alarms(num, unit):
          alarms, _, _ = last_n_minutes(int(num), _get_alarms)
 
     with_events = list(map(add_events, alarms)
+    new_events(with_events, lambda event: event['AlarmUniqueInfo'], 'aliyun_sas_log_dedup')  
 
     logger.info(f'Total of {len(alarms)} fetched from Aliyn')
 
