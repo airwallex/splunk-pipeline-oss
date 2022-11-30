@@ -68,6 +68,9 @@ def add_events(alarm):
     alarm['Events'] = _get_events(alarm)
     return alarm
 
+def _get_id(event):
+    return event['AlarmUniqueInfo']
+
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
@@ -80,11 +83,12 @@ def get_alarms(num, unit):
     elif (time_unit == Unit.minutes):
          alarms, _, _ = last_n_minutes(int(num), _get_alarms)
 
-    with_events = list(map(add_events, alarms)
-    new_events(with_events, lambda event: event['AlarmUniqueInfo'], 'aliyun_sas_log_dedup')  
+    with_events = list(map(add_events, alarms))
+    new = new_events(with_events, _get_id, 'aliyun_sas_log_dedup')
 
-    logger.info(f'Total of {len(alarms)} fetched from Aliyn')
+    logger.info(f'Total of {len(alarms)} fetched from Aliyn out of which {len(new)} are new')
 
+    mark_events(new, _get_id, 'aliyun_sas_log_dedup')
 
 if __name__ == '__main__':
     cli()

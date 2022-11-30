@@ -3,6 +3,8 @@
 from secops_common.bigquery import latest_rows, get_table, insert_rows
 from secops_common.functional import merge, compose2, flatten
 
+from google.cloud import bigquery
+
 def get_id(row):
     return row['id']
 
@@ -16,6 +18,8 @@ def new_events(events, fn_id, table):
         bigquery.ArrayQueryParameter("ids", "STRING", ids),
     ]
   )
+
+  rows = run_query(query, config=job_config)
   existing = set(map(compose2(get_id, dict), rows))
   new_items = ids - existing
   return list(filter(lambda event: fn_id(event) in new_items , events))
