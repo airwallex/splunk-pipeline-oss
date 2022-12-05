@@ -41,8 +41,11 @@ from pipeline.maxmind import _publish_and_download_maxmind
 # Bamboo
 from pipeline.bamboo import _publish_and_download_bamboo
 
-# Intune_AZ 
+# Intune_AZ
 from pipeline.ms_graph_inventory import _publish_and_download_intune
+
+# Aliyun SAS
+from pipeline.aliyun.sas import _publish_alerts
 
 class Service(Enum):
     confluence = auto()
@@ -54,7 +57,8 @@ class Service(Enum):
     gmail = auto()
     maxmind = auto()
     bamboo = auto()
-    ms_graph_inventory = auto() 
+    ms_graph_inventory = auto()
+    aliyun_sas = auto()
 
 
 def into_service(string):

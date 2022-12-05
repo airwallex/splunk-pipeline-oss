@@ -55,6 +55,8 @@ setopt histignorespace
 
  ./secops_common/bin/add_secret bamboo "{'token': <token>, 'splunk':<token>}"
 
+ ./secops_common/bin/add_secret aliyun_sas "{'splunk':<token>}"
+
  ./secops_common/bin/add_secret 'ms_graph_api_aad_intune' '{"tenant_id":"xxxxxxxxxxx","client_id":"xxxxxxxxxxxxx","app_secret":"xxxxxxxxxxxxxx,"secret_id":"xxxxxxxxxxxxxxx","splunk":"<token>"}'
 ```
 

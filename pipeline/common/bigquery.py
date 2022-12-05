@@ -43,14 +43,14 @@ DEDUP_SCHEMA = [
                          description='Bigquery record creation time')
 ]
 
+
 def into_schema(products):
     return dict(
         list(
-            map(lambda product: (f'{product}_log_fetch', SYNC_SCHEMA),
-                products)) +
-        list(
-            map(lambda product: (f'{product}_log_dedup', DEDUP_SCHEMA),
-                products)))
+            map(lambda product:
+                (f'{product}_log_fetch', SYNC_SCHEMA), products)) + list(
+                    map(lambda product:
+                        (f'{product}_log_dedup', DEDUP_SCHEMA), products)))
 
 
 AUDITS = [

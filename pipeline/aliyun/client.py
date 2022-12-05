@@ -10,6 +10,7 @@ import functools
 
 project_id = CONFIG['project_id']
 
+
 def _next(client, request, response):
     page = response['PageNumber'] + 1
     request.set_PageNumber(page)
@@ -74,6 +75,6 @@ def fetch_all(client, request, fn):
 # See https://www.alibabacloud.com/help/doc-detail/40654.html for available regions
 @functools.lru_cache(maxsize=None)
 def initialize_client(region='cn-hongkong'):
-    auth = read_config(project_id,'aliyun')
+    auth = read_config(project_id, 'aliyun')
     return AcsClient(auth['access_key_id'], auth['access_key_secret'], region,
                      True, 360)
