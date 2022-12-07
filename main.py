@@ -44,8 +44,8 @@ from pipeline.bamboo import _publish_and_download_bamboo
 # Intune_AZ
 from pipeline.ms_graph_inventory import _publish_and_download_intune
 
-# Aliyun SAS
-from pipeline.aliyun.sas import _publish_alerts
+# Aliyun
+from pipeline.aliyun.sas import _publish_sas_alarms
 
 class Service(Enum):
     confluence = auto()
@@ -87,6 +87,9 @@ def trigger_processing(payload):
         _publish_and_download_bamboo()
     elif service == Service.ms_graph_inventory:
         _publish_and_download_intune()
+    elif service == Service.aliyun_sas:
+        _publish_sas_alarms()
+
 
 
 """ Processing messages in the cloud function:

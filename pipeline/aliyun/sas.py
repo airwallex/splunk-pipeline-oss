@@ -109,7 +109,7 @@ def _fetch(num, unit):
     return new
 
 
-def _publish_alarms(num, unit):
+def _publish_sas_alarms(num, unit):
     new = _fetch(num, unit)
     batches = partition(new, BATCH_SIZE)
 
@@ -138,7 +138,7 @@ def get_alarms(num, unit):
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
 def publish_alarms(num, unit):
-    _publish_alarms(num, unit)
+    _publish_sas_alarms(num, unit)
 
 
 if __name__ == '__main__':
