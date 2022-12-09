@@ -47,6 +47,7 @@ from pipeline.ms_graph_inventory import _publish_and_download_intune
 # Aliyun
 from pipeline.aliyun.sas import _publish_sas_alarms
 
+
 class Service(Enum):
     confluence = auto()
     spreadsheet = auto()
@@ -88,8 +89,7 @@ def trigger_processing(payload):
     elif service == Service.ms_graph_inventory:
         _publish_and_download_intune()
     elif service == Service.aliyun_sas:
-        _publish_sas_alarms()
-
+        _publish_sas_alarms(30, 'days')
 
 
 """ Processing messages in the cloud function:
