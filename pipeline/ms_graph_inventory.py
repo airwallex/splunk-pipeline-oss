@@ -259,7 +259,8 @@ def _process(records):
         sum_event_count += len(batch)
         batch_count += 1
 
-    logger.debug(f'published a total of {len(records)} into splunk')
+    logger.debug(
+        f'Published a total of {len(records)} from az and intune into splunk')
 
 
 def _publish_and_download_intune():
