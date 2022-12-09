@@ -35,16 +35,18 @@ splunk_token = auth_map['splunk']
 Write_File = False
 scope = 'https://graph.microsoft.com/.default'
 
+BATCH_SIZE = 5000
+
 
 def init_clients_creds():
-    logger.info("setting v1 graph client")
+    logger.debug("setting v1 graph client")
     tenant_id = auth_map["tenant_id"]
     client_id = auth_map["client_id"]
     app_secret = auth_map["app_secret"]
     secret_id = auth_map[
         "secret_id"]  #can facilitate tracking auth issues by id in the app
 
-    logger.info(
+    logger.debug(
         f'setting graph api client: {tenant_id}, clientid(app_id): {tenant_id}, secret id: {secret_id}'
     )
     creds = ClientSecretCredential(tenant_id=tenant_id,
@@ -61,10 +63,11 @@ def graph_generator_f(graph_client, endpoint=None, max_page=3):
 
     cumulative_item_count = 0
     logger.info(f'about to start collecting from: {endpoint}')
-    logger.info(f'max_page is {max_page}')
+    logger.debug(f'max_page is {max_page}')
 
     while endpoint and (max_page == 0 or page_num <= max_page):
-        logger.info(f'Retrieving page number: {page_num} from url: {endpoint}')
+        logger.debug(
+            f'Retrieving page number: {page_num} from url: {endpoint}')
         response_raw = graph_client.get(endpoint).json()
         if "value" in response_raw:
             logger.debug(f'response_raw: {str(response_raw)[1:500]}')
@@ -75,13 +78,13 @@ def graph_generator_f(graph_client, endpoint=None, max_page=3):
 
         page_records_batch = response_raw["value"]
         cumulative_item_count += len(page_records_batch)
-        logger.info(
+        logger.debug(
             f'collected items: {len(page_records_batch)}, cumulative count {cumulative_item_count}'
         )
         yield from page_records_batch
         endpoint = response_raw[
             "@odata.nextLink"] if "@odata.nextLink" in response_raw else None
-        logger.info(f'next page url is {endpoint}')
+        logger.debug(f'next page url is {endpoint}')
         page_num += 1
 
 
@@ -106,8 +109,8 @@ def query_items_all(graph_client,
     url = make_base_url(base_url, page_size, extra_args)
     paging_is_enabled = page_size > 0
 
-    logger.info(f'about to fetch from api endpoint: {base_url}')
-    logger.info(
+    logger.debug(f'about to fetch from api endpoint: {base_url}')
+    logger.debug(
         f'paging_enabled: {paging_is_enabled}, max_page: {max_page}, page_size {page_size}'
     )
 
@@ -125,7 +128,7 @@ def get_az_devices(graph_client):
                                    base_url="/devices",
                                    max_page=0,
                                    page_size=500)
-    logger.info(f'collected device objects {len(api_ret_list)}')
+    logger.debug(f'collected device objects {len(api_ret_list)}')
     return api_ret_list
 
 
@@ -134,7 +137,7 @@ def get_az_users(graph_client):
                                    base_url="/users",
                                    max_page=0,
                                    page_size=500)
-    logger.info(f'collected user objects {len(api_ret_list)}')
+    logger.debug(f'collected user objects {len(api_ret_list)}')
     return api_ret_list
 
 
@@ -146,7 +149,7 @@ def get_az_groups(graph_client, expand=False):
                                    max_page=0,
                                    page_size=500,
                                    extra_args="$expand=members")
-    logger.info(f'collected group objects {len(api_ret_list)}')
+    logger.debug(f'collected group objects {len(api_ret_list)}')
     return api_ret_list
 
 
@@ -156,7 +159,7 @@ def get_intune_managed_devices(graph_client):
                                    base_url="/deviceManagement/managedDevices",
                                    max_page=0,
                                    page_size=500)
-    logger.info(f'collected managed device objects {len(api_ret_list)}')
+    logger.debug(f'collected managed device objects {len(api_ret_list)}')
     return api_ret_list
 
 
@@ -242,7 +245,7 @@ def _process(records):
     logger.info(
         f'Total of {len(records)} fetched from az and intune, about to publish to splunk'
     )
-    batches = partition(list(records), 100)
+    batches = partition(list(records), BATCH_SIZE)
     http = retryable()
     batch_count = 1
     total_event_count = len(records)
@@ -254,7 +257,7 @@ def _process(records):
                 time_field="time",
                 sourcetype_field='sourcetype_override')
         sum_event_count += len(batch)
-        logger.info(
+        logger.debug(
             f'published batch number: {batch_count} to splunk, event count: {len(batch)}, total so far: {sum_event_count}, of run grand total {total_event_count}'
         )
         batch_count += 1
