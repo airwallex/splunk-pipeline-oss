@@ -257,10 +257,9 @@ def _process(records):
                 time_field="time",
                 sourcetype_field='sourcetype_override')
         sum_event_count += len(batch)
-        logger.debug(
-            f'published batch number: {batch_count} to splunk, event count: {len(batch)}, total so far: {sum_event_count}, of run grand total {total_event_count}'
-        )
         batch_count += 1
+
+    logger.debug(f'published a total of {len(records)} into splunk')
 
 
 def _publish_and_download_intune():
