@@ -74,8 +74,6 @@ def _get_alarms(start, end):
     request = DescribeAlarmEventListRequest.DescribeAlarmEventListRequest()
     request.set_From('sas')
     date_format = '%Y-%m-%d %H:%M:%S'
-    print(start.strftime(date_format))
-    print(end.strftime(date_format))
     request.set_TimeStart(start.strftime(date_format))
     request.set_TimeEnd(end.strftime(date_format))
     request.set_CurrentPage(0)
