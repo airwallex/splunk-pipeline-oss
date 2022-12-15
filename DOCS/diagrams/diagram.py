@@ -4,7 +4,6 @@ from diagrams.gcp.compute import Functions
 from diagrams.gcp.devtools import Scheduler
 from diagrams.generic.storage import Storage
 
-
 with Diagram("Splunk Pipeline", show=False):
     pubsub = PubSub("pubsub")
 
@@ -18,4 +17,3 @@ with Diagram("Splunk Pipeline", show=False):
     pubsub >> function
     function >> state
     function >> Storage('splunk')
-
