@@ -64,6 +64,24 @@ def fetch_with_count_2(client, request, fn):
     return result
 
 
+def fetch_with_count_3(client, request, fn):
+    request.set_PageSize(1000)
+    request.set_CurrentPage(0)
+    response = deserialize(client.do_action_with_exception(request))
+    result = fn(response)
+    total = response['PageSize']
+    page = response['CurrentPage']
+
+    while (response['TotalCount'] > total):
+        page += 1
+        request.set_CurrentPage(page)
+        response = deserialize(client.do_action_with_exception(request))
+        result.extend(fn(response))
+        total += response['PageSize']
+
+    return result
+
+
 """ Fetch all in one go (no pagination) """
 
 

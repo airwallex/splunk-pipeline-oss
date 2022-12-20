@@ -8,7 +8,9 @@ from aliyunsdkcore.acs_exception.exceptions import ClientException
 from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdksas.request.v20181203 import DescribeAlarmEventListRequest
 from aliyunsdksas.request.v20181203 import DescribeSuspEventDetailRequest
+from aliyunsdksas.request.v20181203 import DescribeAccesskeyLeakListRequest
 from pipeline.common.fetch import last_n_24hours, last_n_minutes, last_from_persisted, mark_last_fetch, Unit, into_unit
+from pipeline.common.time import unix_time_millis
 
 # Logging
 import pprint
@@ -19,7 +21,7 @@ from secops_common.logsetup import logger, enable_logfile
 from pipeline.common.config import CONFIG
 
 # Aliyun
-from pipeline.aliyun.client import fetch_with_count_2, initialize_client, fetch_with_count, fetch_with_token, fetch_all
+from pipeline.aliyun.client import fetch_with_count_2, fetch_with_count_3, initialize_client, fetch_with_count, fetch_with_token, fetch_all
 from datetime import datetime
 
 # dedup
@@ -81,16 +83,25 @@ def _get_alarms(start, end):
                               lambda response: response['SuspEvents'])
 
 
+def _get_leaks(start, end):
+    client = initialize_client(region='cn-hangzhou')
+    request = DescribeAccesskeyLeakListRequest.DescribeAccesskeyLeakListRequest(
+    )
+    request.set_StartTs(unix_time_millis(start))
+    return fetch_with_count_3(client, request,
+                              lambda response: response['AccessKeyLeakList'])
+
+
 def add_events(alarm):
     alarm['Events'] = _get_events(alarm)
     return alarm
 
 
-def _get_id(event):
+def _get_alert_id(event):
     return event['AlarmUniqueInfo']
 
 
-def _fetch(num, unit):
+def _fetch_alerts(num, unit):
     time_unit = into_unit(unit)
 
     if (time_unit == Unit.days):
@@ -100,7 +111,7 @@ def _fetch(num, unit):
         alarms, _, _ = last_n_minutes(int(num), _get_alarms)
 
     with_events = list(map(add_events, alarms))
-    new = new_events(with_events, _get_id, 'aliyun_sas_log_dedup')
+    new = new_events(with_events, _get_alert_id, 'aliyun_sas_log_dedup')
 
     logger.info(
         f'Total of {len(alarms)} fetched from Aliyn out of which {len(new)} are new'
@@ -109,8 +120,46 @@ def _fetch(num, unit):
     return new
 
 
+def _get_leak_id(event):
+    return event['Id']
+
+
+def _fetch_leaks(num, unit):
+    time_unit = into_unit(unit)
+
+    if (time_unit == Unit.days):
+        leaks, _, _ = last_n_24hours(int(num), _get_leaks)
+
+    elif (time_unit == Unit.minutes):
+        leaks, _, _ = last_n_minutes(int(num), _get_leaks)
+
+    new = new_events(leaks, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
+
+    logger.info(
+        f'Total of {len(leaks)} leaks fetched from Aliyn out of which {len(new)} are new'
+    )
+
+    return new
+
+
 def _publish_sas_alarms(num, unit):
-    new = _fetch(num, unit)
+    new = _fetch_alerts(num, unit)
+    batches = partition(new, BATCH_SIZE)
+
+    http = retryable()
+    splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
+    for batch in batches:
+        publish(http, batch, splunk_token)
+
+    if (len(new) > 0):
+        logger.info(
+            f'Total of {len(new)} persisted into Splunk from Aliyun SAS')
+
+    mark_events(new, _get_id, 'aliyun_sas_log_dedup')
+
+
+def _publish_sas_leaks(num, unit):
+    new = _fetch_leaks(num, unit)
     batches = partition(new, BATCH_SIZE)
 
     http = retryable()
@@ -129,9 +178,18 @@ def _publish_sas_alarms(num, unit):
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
 def get_alarms(num, unit):
-    alerts = _fetch(num, unit)
+    alerts = _fetch_alerts(num, unit)
     for alert in alerts:
         print(alert)
+
+
+@cli.command()
+@click.option("--num", required=True)
+@click.option("--unit", required=True)
+def get_leaks(num, unit):
+    leaks = _fetch_leaks(num, unit)
+    for leak in leaks:
+        print(leak)
 
 
 @cli.command()

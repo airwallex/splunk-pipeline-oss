@@ -60,8 +60,10 @@ AUDITS = [
 
 WORKSPACE = into_schema(map(lambda product: f'workspace_{product}', AUDITS))
 
-PRODUCTS = into_schema(
-    ['jira', 'confluence', 'atlassian', 'lastpass', 'gmail', 'aliyun_sas'])
+PRODUCTS = into_schema([
+    'jira', 'confluence', 'atlassian', 'lastpass', 'gmail', 'aliyun_sas',
+    'aliyun_sas_leaks'
+])
 
 SPREAD = {
     'spreadsheet_tracking': [
