@@ -34,18 +34,19 @@ def cli():
     pass
 
 
-project = CONFIG['project']
+project = CONFIG['workspace_project']
+dataset = CONFIG['workspace_dataset']
 
 
 def query(start, end):
     # See https://support.google.com/a/answer/7234657?product_name=UnuFlow&hl=en&visit_id=637885264241168345-3671120257&rd=1&src=supportwidget0&hl=en
     # Note the timestamp_usec has to be converted using a BQ function! (it won't work otherwise)
-    return f"""SELECT TIMESTAMP_MICROS(event_info.timestamp_usec) as timestamp, event_info, message_info FROM `{project}.gmail_logs_dataset.daily_*` where
-                  (_TABLE_SUFFIX BETWEEN '{start.strftime('%Y%m%d')}' AND '{end.strftime('%Y%m%d')}')
+    return f"""SELECT TIMESTAMP_MICROS(gmail.event_info.timestamp_usec) as timestamp, gmail.event_info, gmail.message_info FROM `{project}.{dataset}.activity` where
+                  record_type='gmail'
                      AND
-                  event_info.timestamp_usec > {microseconds(start)}
+                  gmail.event_info.timestamp_usec > {microseconds(start)}
                      AND
-                  event_info.timestamp_usec <= {microseconds(end)}"""
+                  gmail.event_info.timestamp_usec <= {microseconds(end)}"""
 
 
 def _get_logs(start, end):
