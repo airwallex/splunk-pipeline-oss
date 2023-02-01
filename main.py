@@ -45,7 +45,7 @@ from pipeline.bamboo import _publish_and_download_bamboo
 from pipeline.ms_graph_inventory import _publish_and_download_intune
 
 # Aliyun
-from pipeline.aliyun.sas import _publish_sas_alarms
+from pipeline.aliyun.sas import _publish_sas_alerts
 
 
 class Service(Enum):
@@ -89,7 +89,7 @@ def trigger_processing(payload):
     elif service == Service.ms_graph_inventory:
         _publish_and_download_intune()
     elif service == Service.aliyun_sas:
-        _publish_sas_alarms(30, 'days')
+        _publish_sas_alerts(30, 'days')
 
 
 """ Processing messages in the cloud function:

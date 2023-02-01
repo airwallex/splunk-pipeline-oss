@@ -94,5 +94,4 @@ def fetch_all(client, request, fn):
 @functools.lru_cache(maxsize=None)
 def initialize_client(region='cn-hongkong', account='INT'):
     auth = read_config(project_id, 'aliyun')[account]
-    return AcsClient(auth['key'], auth['secret'], region,
-                     True, 360)
+    return AcsClient(auth['key'], auth['secret'], region, True, 360)

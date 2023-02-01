@@ -54,6 +54,11 @@ def vuln_row(stamp, level, vuln):
     ]
 
 
+def with_source(source, m):
+    m['sourcetype'] = source
+    return m
+
+
 def _fetch_event(client, id):
     request = DescribeSuspEventDetailRequest.DescribeSuspEventDetailRequest()
     request.set_From('sas')
@@ -142,9 +147,14 @@ def _fetch_leaks(num, unit):
     return new
 
 
-def _publish_sas_alarms(num, unit):
+def _get_alarm_id(event):
+    return event['AlarmUniqueInfo']
+
+
+def _publish_sas_alerts(num, unit):
     new = _fetch_alerts(num, unit)
-    batches = partition(new, BATCH_SIZE)
+    sourced = list(map(partial(with_source, 'aliyun:sas:alerts'), new))
+    batches = partition(sourced, BATCH_SIZE)
 
     http = retryable()
     splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
@@ -155,11 +165,12 @@ def _publish_sas_alarms(num, unit):
         logger.info(
             f'Total of {len(new)} persisted into Splunk from Aliyun SAS')
 
-    mark_events(new, _get_id, 'aliyun_sas_log_dedup')
+    mark_events(new, _get_alarm_id, 'aliyun_sas_log_dedup')
 
 
 def _publish_sas_leaks(num, unit):
     new = _fetch_leaks(num, unit)
+    sourced = list(map(partial(with_source, 'aliyun:sas:key_leaks'), new))
     batches = partition(new, BATCH_SIZE)
 
     http = retryable()
@@ -171,13 +182,13 @@ def _publish_sas_leaks(num, unit):
         logger.info(
             f'Total of {len(new)} persisted into Splunk from Aliyun SAS')
 
-    mark_events(new, _get_id, 'aliyun_sas_log_dedup')
+    mark_events(new, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
 
 
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
-def get_alarms(num, unit):
+def get_alerts(num, unit):
     alerts = _fetch_alerts(num, unit)
     for alert in alerts:
         print(alert)
@@ -195,8 +206,15 @@ def get_leaks(num, unit):
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
-def publish_alarms(num, unit):
-    _publish_sas_alarms(num, unit)
+def publish_alerts(num, unit):
+    _publish_sas_alerts(num, unit)
+
+
+@cli.command()
+@click.option("--num", required=True)
+@click.option("--unit", required=True)
+def publish_leaks(num, unit):
+    _publish_sas_leaks(num, unit)
 
 
 if __name__ == '__main__':
