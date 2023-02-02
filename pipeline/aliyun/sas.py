@@ -9,6 +9,7 @@ from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdksas.request.v20181203 import DescribeAlarmEventListRequest
 from aliyunsdksas.request.v20181203 import DescribeSuspEventDetailRequest
 from aliyunsdksas.request.v20181203 import DescribeAccesskeyLeakListRequest
+from aliyunsdksas.request.v20181203 import DescribeExposedInstanceListRequest
 from pipeline.common.fetch import last_n_24hours, last_n_minutes, last_from_persisted, mark_last_fetch, Unit, into_unit
 from pipeline.common.time import unix_time_millis
 
@@ -95,6 +96,14 @@ def _get_leaks(start, end):
     request.set_StartTs(unix_time_millis(start))
     return fetch_with_count_3(client, request,
                               lambda response: response['AccessKeyLeakList'])
+
+
+# See https://www.alibabacloud.com/help/en/security-center/latest/api-doc-sas-2018-12-03-api-doc-describeexposedinstancelist
+def _get_exposed():
+    client = initialize_client(region='cn-hangzhou')
+    request = DescribeExposedInstanceListRequest.DescribeExposedInstanceListRequest()
+    return fetch_with_count_2(client, request,
+                              lambda response: response['ExposedInstances'])
 
 
 def add_events(alarm):
@@ -202,6 +211,11 @@ def get_leaks(num, unit):
     for leak in leaks:
         print(leak)
 
+@cli.command()
+def get_exposed():
+    instances = _get_exposed()
+    for instance in instances:
+        print(instance)
 
 @cli.command()
 @click.option("--num", required=True)
@@ -215,7 +229,6 @@ def publish_alerts(num, unit):
 @click.option("--unit", required=True)
 def publish_leaks(num, unit):
     _publish_sas_leaks(num, unit)
-
 
 if __name__ == '__main__':
     cli()
