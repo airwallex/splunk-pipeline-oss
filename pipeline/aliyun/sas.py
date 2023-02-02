@@ -101,7 +101,8 @@ def _get_leaks(start, end):
 # See https://www.alibabacloud.com/help/en/security-center/latest/api-doc-sas-2018-12-03-api-doc-describeexposedinstancelist
 def _get_exposed():
     client = initialize_client(region='cn-hangzhou')
-    request = DescribeExposedInstanceListRequest.DescribeExposedInstanceListRequest()
+    request = DescribeExposedInstanceListRequest.DescribeExposedInstanceListRequest(
+    )
     return fetch_with_count_2(client, request,
                               lambda response: response['ExposedInstances'])
 
@@ -194,6 +195,32 @@ def _publish_sas_leaks(num, unit):
     mark_events(new, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
 
 
+def _publish_sas_exposed():
+    new = _get_exposed()
+    sourced = list(map(partial(with_source, 'aliyun:sas:exposed_assets'), new))
+    batches = partition(new, BATCH_SIZE)
+
+    http = retryable()
+    splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
+    for batch in batches:
+        publish(http, batch, splunk_token)
+
+    if (len(new) > 0):
+        logger.info(
+            f'Total of {len(new)} persisted into Splunk from Aliyun SAS')
+
+
+def _publish_sas(num, unit, _type):
+    if _type == 'alerts':
+        _publish_sas_alerts(num, unit)
+    elif _type == 'leaks':
+        _publish_sas_leaks(num, unit)
+    elif _type == 'exposed':
+        _publish_sas_exposed()
+    else:
+        raise Exception('no matching sas type found')
+
+
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
@@ -211,11 +238,13 @@ def get_leaks(num, unit):
     for leak in leaks:
         print(leak)
 
+
 @cli.command()
 def get_exposed():
     instances = _get_exposed()
     for instance in instances:
         print(instance)
+
 
 @cli.command()
 @click.option("--num", required=True)
@@ -229,6 +258,12 @@ def publish_alerts(num, unit):
 @click.option("--unit", required=True)
 def publish_leaks(num, unit):
     _publish_sas_leaks(num, unit)
+
+
+@cli.command()
+def publish_exposed():
+    _publish_sas_exposed()
+
 
 if __name__ == '__main__':
     cli()
