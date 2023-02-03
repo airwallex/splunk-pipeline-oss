@@ -11,6 +11,9 @@ $ ./secops_common/bin/schedule splunk-pipeline-bamboo "0 */4 * * *" '{"service":
 $ ./secops_common/bin/schedule splunk-pipeline-jira "*/5 * * * *" '{"service":"jira"}'
 
 $ ./secops_common/bin/schedule splunk-pipeline-spreadsheet "*/5 * * * *" '{"service":"spreadsheet", "id":"..", "range":"..."}'
+
+$ ./secops_common/bin/schedule splunk-pipleline-ms_graph_inventory "*/20 * * * *" '{"service":"ms_graph_inventory"}'
+
 # workspace
 $ ./secops_common/bin/schedule splunk-pipeline-google_workspace_login "*/5 * * * *" '{"service":"workspace", "type":"login"}'
 
@@ -20,13 +23,13 @@ $ ./secops_common/bin/schedule splunk-pipeline-google_workspace_drive "*/5 * * *
 
 $ ./secops_common/bin/schedule splunk-pipeline-gmail "*/5 * * * *" '{"service":"gmail"}'
 
+# Aliyun 
 $ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-alerts "*/5 * * * *" '{"service":"aliyun_sas", "type":"alerts"}'
 
 $ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-leaks "*/5 * * * *" '{"service":"aliyun_sas", "type":"leaks"}'
 
 $ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-exposed "0 * * * *" '{"service":"aliyun_sas", "type":"exposed"}'
 
-$ ./secops_common/bin/schedule splunk-pipleline-ms_graph_inventory "*/20 * * * *" '{"service":"ms_graph_inventory"}'
 ```
 
 
