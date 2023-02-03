@@ -173,7 +173,8 @@ def _publish_sas_alerts(num, unit):
 
     if (len(new) > 0):
         logger.info(
-            f'Total of {len(new)} persisted into Splunk from Aliyun SAS')
+            f'Total of {len(new)} alerts persisted into Splunk from Aliyun SAS'
+        )
 
     mark_events(new, _get_alarm_id, 'aliyun_sas_log_dedup')
 
@@ -190,7 +191,7 @@ def _publish_sas_leaks(num, unit):
 
     if (len(new) > 0):
         logger.info(
-            f'Total of {len(new)} persisted into Splunk from Aliyun SAS')
+            f'Total of {len(new)} leaks persisted into Splunk from Aliyun SAS')
 
     mark_events(new, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
 
@@ -198,16 +199,16 @@ def _publish_sas_leaks(num, unit):
 def _publish_sas_exposed():
     new = _get_exposed()
     sourced = list(map(partial(with_source, 'aliyun:sas:exposed_assets'), new))
-    batches = partition(new, BATCH_SIZE)
+    batches = partition(sourced, BATCH_SIZE)
 
     http = retryable()
     splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
     for batch in batches:
         publish(http, batch, splunk_token)
 
-    if (len(new) > 0):
-        logger.info(
-            f'Total of {len(new)} persisted into Splunk from Aliyun SAS')
+    logger.info(
+        f'Total of {len(new)} exposed instances persisted into Splunk from Aliyun SAS'
+    )
 
 
 def _publish_sas(num, unit, _type):
