@@ -69,7 +69,7 @@ def _fetch_event(client, id):
 
 
 def _get_events(alarm, account):
-    client = initialize_client(region='cn-hangzhou', account)
+    client = initialize_client(region='cn-hangzhou', account=account)
     ids = alarm['SecurityEventIds']
     if (isinstance(ids, list)):
         return list(map(partial(_fetch_event, client), ids))
@@ -77,8 +77,8 @@ def _get_events(alarm, account):
         return [_fetch_event(client, ids)]
 
 
-def _get_alarms(start, end):
-    client = initialize_client(region='cn-hangzhou')
+def _get_alarms(account, start, end):
+    client = initialize_client(region='cn-hangzhou', account=account)
     request = DescribeAlarmEventListRequest.DescribeAlarmEventListRequest()
     request.set_From('sas')
     date_format = '%Y-%m-%d %H:%M:%S'
@@ -108,8 +108,8 @@ def _get_exposed(account):
                               lambda response: response['ExposedInstances'])
 
 
-def add_events(alarm, account):
-    alarm['Events'] = _get_events(alarm)
+def add_events(account, alarm):
+    alarm['Events'] = _get_events(alarm, account)
     return alarm
 
 
