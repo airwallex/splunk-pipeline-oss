@@ -89,7 +89,7 @@ def trigger_processing(payload):
     elif service == Service.ms_graph_inventory:
         _publish_and_download_intune()
     elif service == Service.aliyun_sas:
-        _publish_sas(30, 'days', payload['type'])
+        _publish_sas(30, 'days', payload['type'], payload['account'])
 
 
 """ Processing messages in the cloud function:

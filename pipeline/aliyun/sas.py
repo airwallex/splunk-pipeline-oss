@@ -68,8 +68,8 @@ def _fetch_event(client, id):
     return fetch_all(client, request, lambda response: response)
 
 
-def _get_events(alarm):
-    client = initialize_client(region='cn-hangzhou')
+def _get_events(alarm, account):
+    client = initialize_client(region='cn-hangzhou', account)
     ids = alarm['SecurityEventIds']
     if (isinstance(ids, list)):
         return list(map(partial(_fetch_event, client), ids))
@@ -90,8 +90,8 @@ def _get_alarms(start, end):
                               lambda response: response['SuspEvents'])
 
 
-def _get_leaks(start, end):
-    client = initialize_client(region='cn-hangzhou')
+def _get_leaks(account, start, end):
+    client = initialize_client(region='cn-hangzhou', account=account)
     request = DescribeAccesskeyLeakListRequest.DescribeAccesskeyLeakListRequest(
     )
     request.set_StartTs(unix_time_millis(start))
@@ -100,15 +100,15 @@ def _get_leaks(start, end):
 
 
 # See https://www.alibabacloud.com/help/en/security-center/latest/api-doc-sas-2018-12-03-api-doc-describeexposedinstancelist
-def _get_exposed():
-    client = initialize_client(region='cn-hangzhou')
+def _get_exposed(account):
+    client = initialize_client(region='cn-hangzhou', account=account)
     request = DescribeExposedInstanceListRequest.DescribeExposedInstanceListRequest(
     )
     return fetch_with_count_2(client, request,
                               lambda response: response['ExposedInstances'])
 
 
-def add_events(alarm):
+def add_events(alarm, account):
     alarm['Events'] = _get_events(alarm)
     return alarm
 
@@ -117,16 +117,16 @@ def _get_alert_id(event):
     return event['AlarmUniqueInfo']
 
 
-def _fetch_alerts(num, unit):
+def _fetch_alerts(num, unit, account):
     time_unit = into_unit(unit)
 
     if (time_unit == Unit.days):
-        alarms, _, _ = last_n_24hours(int(num), _get_alarms)
+        alarms, _, _ = last_n_24hours(int(num), partial(_get_alarms, account))
 
     elif (time_unit == Unit.minutes):
-        alarms, _, _ = last_n_minutes(int(num), _get_alarms)
+        alarms, _, _ = last_n_minutes(int(num), partial(_get_alarms, account))
 
-    with_events = list(map(add_events, alarms))
+    with_events = list(map(partial(add_events, account), alarms))
     new = new_events(with_events, _get_alert_id, 'aliyun_sas_log_dedup')
 
     logger.info(
@@ -140,14 +140,14 @@ def _get_leak_id(event):
     return event['Id']
 
 
-def _fetch_leaks(num, unit):
+def _fetch_leaks(num, unit, account):
     time_unit = into_unit(unit)
 
     if (time_unit == Unit.days):
-        leaks, _, _ = last_n_24hours(int(num), _get_leaks)
+        leaks, _, _ = last_n_24hours(int(num), partial(_get_leaks, account))
 
     elif (time_unit == Unit.minutes):
-        leaks, _, _ = last_n_minutes(int(num), _get_leaks)
+        leaks, _, _ = last_n_minutes(int(num), partial(_get_leaks, account))
 
     new = new_events(leaks, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
 
@@ -162,8 +162,8 @@ def _get_alarm_id(event):
     return event['AlarmUniqueInfo']
 
 
-def _publish_sas_alerts(num, unit):
-    new = _fetch_alerts(num, unit)
+def _publish_sas_alerts(num, unit, account):
+    new = _fetch_alerts(num, unit, account)
     sourced = list(map(partial(with_source, 'aliyun:sas:alerts'), new))
     batches = partition(sourced, BATCH_SIZE)
 
@@ -180,8 +180,8 @@ def _publish_sas_alerts(num, unit):
     mark_events(new, _get_alarm_id, 'aliyun_sas_log_dedup')
 
 
-def _publish_sas_leaks(num, unit):
-    new = _fetch_leaks(num, unit)
+def _publish_sas_leaks(num, unit, account):
+    new = _fetch_leaks(num, unit, account)
     sourced = list(map(partial(with_source, 'aliyun:sas:key_leaks'), new))
     batches = partition(new, BATCH_SIZE)
 
@@ -212,13 +212,13 @@ def _publish_sas_exposed():
     )
 
 
-def _publish_sas(num, unit, _type):
+def _publish_sas(num, unit, _type, account):
     if _type == 'alerts':
-        _publish_sas_alerts(num, unit)
+        _publish_sas_alerts(num, unit, account)
     elif _type == 'leaks':
-        _publish_sas_leaks(num, unit)
+        _publish_sas_leaks(num, unit, account)
     elif _type == 'exposed':
-        _publish_sas_exposed()
+        _publish_sas_exposed(account)
     else:
         raise Exception('no matching sas type found')
 
@@ -226,8 +226,9 @@ def _publish_sas(num, unit, _type):
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
-def get_alerts(num, unit):
-    alerts = _fetch_alerts(num, unit)
+@click.option("--account", required=True)
+def get_alerts(num, unit, account):
+    alerts = _fetch_alerts(num, unit, account)
     for alert in alerts:
         print(alert)
 
@@ -235,15 +236,17 @@ def get_alerts(num, unit):
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
-def get_leaks(num, unit):
-    leaks = _fetch_leaks(num, unit)
+@click.option("--account", required=True)
+def get_leaks(num, unit, account):
+    leaks = _fetch_leaks(num, unit, account)
     for leak in leaks:
         print(leak)
 
 
 @cli.command()
-def get_exposed():
-    instances = _get_exposed()
+@click.option("--account", required=True)
+def get_exposed(account):
+    instances = _get_exposed(account)
     for instance in instances:
         print(instance)
 
@@ -258,7 +261,8 @@ def publish_alerts(num, unit):
 @cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
-def publish_leaks(num, unit):
+@click.option("--account", required=True)
+def publish_leaks(num, unit, account):
     _publish_sas_leaks(num, unit)
 
 
