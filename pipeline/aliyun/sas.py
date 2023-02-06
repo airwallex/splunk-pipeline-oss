@@ -56,7 +56,7 @@ def vuln_row(stamp, level, vuln):
 
 
 def with_source(source, m):
-    m['sourcetype'] = source
+    m['source'] = source
     return m
 
 
@@ -169,7 +169,7 @@ def _publish_sas_alerts(num, unit):
     http = retryable()
     splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
     for batch in batches:
-        publish(http, batch, splunk_token)
+        publish(http, batch, splunk_token, sourcetype_field='source')
 
     if (len(new) > 0):
         logger.info(
