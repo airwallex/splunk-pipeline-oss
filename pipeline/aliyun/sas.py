@@ -85,6 +85,7 @@ def _get_alarms(start, end):
     request.set_TimeStart(start.strftime(date_format))
     request.set_TimeEnd(end.strftime(date_format))
     request.set_CurrentPage(0)
+    request.set_Lang('en')
     return fetch_with_count_2(client, request,
                               lambda response: response['SuspEvents'])
 
