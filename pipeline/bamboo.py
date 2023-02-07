@@ -95,9 +95,8 @@ def _process(records):
     for batch in batches:
         publish(http, batch, splunk_token)
 
-    logger.info(
-        f'Total of {len(records)} persisted into Splunk from Bamboo'
-    )
+    logger.info(f'Total of {len(records)} persisted into Splunk from Bamboo')
+
 
 @cli.command()
 def fetch():
