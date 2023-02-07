@@ -90,6 +90,8 @@ def _process(records):
     for batch in batches:
         insert_batch_kv(http, 'kv_hr_info', batch, splunk_api_token)
 
+    batches = partition(list(records), 500)
+
     for batch in batches:
         publish(http, batch, splunk_token)
 
