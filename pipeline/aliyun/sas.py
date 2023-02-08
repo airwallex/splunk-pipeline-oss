@@ -10,6 +10,7 @@ from aliyunsdksas.request.v20181203 import DescribeAlarmEventListRequest
 from aliyunsdksas.request.v20181203 import DescribeSuspEventDetailRequest
 from aliyunsdksas.request.v20181203 import DescribeAccesskeyLeakListRequest
 from aliyunsdksas.request.v20181203 import DescribeExposedInstanceListRequest
+from aliyunsdksas.request.v20181203 import DescribeRiskCheckResultRequest
 from pipeline.common.fetch import last_n_24hours, last_n_minutes, last_from_persisted, mark_last_fetch, Unit, into_unit
 from pipeline.common.time import unix_time_millis
 from pipeline.aliyun.client import fetch_with_count_2, fetch_with_count_3, initialize_client, fetch_with_count, fetch_with_token, fetch_all
@@ -109,9 +110,22 @@ def _get_exposed(account):
                               lambda response: response['ExposedInstances'])
 
 
+def _get_risks(account):
+    client = initialize_client(region='cn-hangzhou', account=account)
+    request = DescribeRiskCheckResultRequest.DescribeRiskCheckResultRequest()
+    request.set_Lang('en')
+    return fetch_with_count_3(client, request,
+                              lambda response: response['List'])
+
+
 def _fetch_exposed(account):
     exposed = _get_exposed(account)
     return list(map(partial(with_account, account), exposed))
+
+
+def _fetch_risks(account):
+    risks = _get_risks(account)
+    return list(map(partial(with_account, account), risks))
 
 
 def add_events(account, alarm):
@@ -188,7 +202,7 @@ def _publish_sas_alerts(num, unit, account):
     http = retryable()
     splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
     for batch in batches:
-        publish(http, batch, splunk_token, sourcetype_field='source')
+        publish(http, batch, splunk_token, sourcetype_field='Source')
 
     if (len(new) > 0):
         logger.info(
@@ -206,7 +220,7 @@ def _publish_sas_leaks(num, unit, account):
     http = retryable()
     splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
     for batch in batches:
-        publish(http, batch, splunk_token)
+        publish(http, batch, splunk_token, sourcetype_field='Source')
 
     if (len(new) > 0):
         logger.info(
@@ -223,10 +237,25 @@ def _publish_sas_exposed(account):
     http = retryable()
     splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
     for batch in batches:
-        publish(http, batch, splunk_token)
+        publish(http, batch, splunk_token, sourcetype_field='Source')
 
     logger.info(
         f'Total of {len(new)} exposed instances persisted into Splunk from Aliyun SAS'
+    )
+
+
+def _publish_sas_risks(account):
+    new = _fetch_exposed(account)
+    sourced = list(map(partial(with_source, 'aliyun:sas:config'), new))
+    batches = partition(sourced, BATCH_SIZE)
+
+    http = retryable()
+    splunk_token = read_config(project_id, 'aliyun_sas')['splunk']
+    for batch in batches:
+        publish(http, batch, splunk_token, sourcetype_field='Source')
+
+    logger.info(
+        f'Total of {len(new)} risk items persisted into Splunk from Aliyun SAS'
     )
 
 
@@ -237,6 +266,8 @@ def _publish_sas(num, unit, _type, account):
         _publish_sas_leaks(num, unit, account)
     elif _type == 'exposed':
         _publish_sas_exposed(account)
+    elif _type == 'risks':
+        _publish_sas_risks(account)
     else:
         raise Exception('no matching sas type found')
 
@@ -270,6 +301,14 @@ def get_exposed(account):
 
 
 @cli.command()
+@click.option("--account", required=True)
+def get_risks(account):
+    items = _fetch_risks(account)
+    for item in items:
+        pp.pprint(item)
+
+
+@cli.command()
 @click.option("--num", required=True)
 @click.option("--unit", required=True)
 def publish_alerts(num, unit):
@@ -285,8 +324,15 @@ def publish_leaks(num, unit, account):
 
 
 @cli.command()
-def publish_exposed():
-    _publish_sas_exposed()
+@click.option("--account", required=True)
+def publish_exposed(account):
+    _publish_sas_exposed(account)
+
+
+@cli.command()
+@click.option("--account", required=True)
+def publish_risks(account):
+    _publish_sas_risks(account)
 
 
 if __name__ == '__main__':
