@@ -12,6 +12,8 @@ from aliyunsdksas.request.v20181203 import DescribeAccesskeyLeakListRequest
 from aliyunsdksas.request.v20181203 import DescribeExposedInstanceListRequest
 from pipeline.common.fetch import last_n_24hours, last_n_minutes, last_from_persisted, mark_last_fetch, Unit, into_unit
 from pipeline.common.time import unix_time_millis
+from pipeline.aliyun.client import fetch_with_count_2, fetch_with_count_3, initialize_client, fetch_with_count, fetch_with_token, fetch_all
+from datetime import datetime
 
 # Logging
 import pprint
@@ -20,10 +22,6 @@ import click
 from secops_common.logsetup import logger, enable_logfile
 
 from pipeline.common.config import CONFIG
-
-# Aliyun
-from pipeline.aliyun.client import fetch_with_count_2, fetch_with_count_3, initialize_client, fetch_with_count, fetch_with_token, fetch_all
-from datetime import datetime
 
 # dedup
 from pipeline.common.dedup import new_events, mark_events
@@ -34,6 +32,9 @@ from pipeline.common.functional import partition
 
 # Splunk
 from pipeline.common.splunk import publish, retryable
+
+# Caching
+import functools
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -56,7 +57,7 @@ def vuln_row(stamp, level, vuln):
 
 
 def with_source(source, m):
-    m['source'] = source
+    m['Source'] = source
     return m
 
 
@@ -108,9 +109,24 @@ def _get_exposed(account):
                               lambda response: response['ExposedInstances'])
 
 
+def _fetch_exposed(account):
+    exposed = _get_exposed(account)
+    return list(map(partial(with_account, account), exposed))
+
+
 def add_events(account, alarm):
     alarm['Events'] = _get_events(alarm, account)
     return alarm
+
+
+@functools.lru_cache(maxsize=None)
+def accound_id(account):
+    return read_config(project_id, 'aliyun')[account]['id']
+
+
+def with_account(account, m):
+    m['CloudAccountId'] = accound_id(account)
+    return m
 
 
 def _get_alert_id(event):
@@ -126,7 +142,8 @@ def _fetch_alerts(num, unit, account):
     elif (time_unit == Unit.minutes):
         alarms, _, _ = last_n_minutes(int(num), partial(_get_alarms, account))
 
-    with_events = list(map(partial(add_events, account), alarms))
+    inc_account = list(map(partial(with_account, account), alarms))
+    with_events = list(map(partial(add_events, account), inc_account))
     new = new_events(with_events, _get_alert_id, 'aliyun_sas_log_dedup')
 
     logger.info(
@@ -150,12 +167,13 @@ def _fetch_leaks(num, unit, account):
         leaks, _, _ = last_n_minutes(int(num), partial(_get_leaks, account))
 
     new = new_events(leaks, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
+    inc_account = list(map(partial(with_account, account), new))
 
     logger.info(
         f'Total of {len(leaks)} leaks fetched from Aliyn out of which {len(new)} are new'
     )
 
-    return new
+    return inc_account
 
 
 def _get_alarm_id(event):
@@ -197,8 +215,8 @@ def _publish_sas_leaks(num, unit, account):
     mark_events(new, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
 
 
-def _publish_sas_exposed():
-    new = _get_exposed()
+def _publish_sas_exposed(account):
+    new = _fetch_exposed(account)
     sourced = list(map(partial(with_source, 'aliyun:sas:exposed_assets'), new))
     batches = partition(sourced, BATCH_SIZE)
 
@@ -230,7 +248,7 @@ def _publish_sas(num, unit, _type, account):
 def get_alerts(num, unit, account):
     alerts = _fetch_alerts(num, unit, account)
     for alert in alerts:
-        print(alert)
+        pp.pprint(alert)
 
 
 @cli.command()
@@ -240,15 +258,15 @@ def get_alerts(num, unit, account):
 def get_leaks(num, unit, account):
     leaks = _fetch_leaks(num, unit, account)
     for leak in leaks:
-        print(leak)
+        pp.pprint(leak)
 
 
 @cli.command()
 @click.option("--account", required=True)
 def get_exposed(account):
-    instances = _get_exposed(account)
+    instances = _fetch_exposed(account)
     for instance in instances:
-        print(instance)
+        pp.pprint(instance)
 
 
 @cli.command()
