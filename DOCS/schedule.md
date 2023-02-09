@@ -23,14 +23,14 @@ $ ./secops_common/bin/schedule splunk-pipeline-google_workspace_drive "*/5 * * *
 
 $ ./secops_common/bin/schedule splunk-pipeline-gmail "*/5 * * * *" '{"service":"gmail"}'
 
-# Aliyun 
-$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-alerts_int "*/5 * * * *" '{"service":"aliyun_sas", "type":"alerts", "account":"..."}'
+# Aliyun
+$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-alerts_{account}" */5 * * * *" '{"service":"aliyun_sas", "type":"alerts", "account":"..."}'
 
-$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-leaks_int "*/5 * * * *" '{"service":"aliyun_sas", "type":"leaks", "account" : "..."}'
+$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-leaks_{account} "*/5 * * * *" '{"service":"aliyun_sas", "type":"leaks", "account" : "..."}'
 
-$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-exposed_int "0 * * * *" '{"service":"aliyun_sas", "type":"exposed", "account":"..."}'
+$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-exposed_{account} "0 * * * *" '{"service":"aliyun_sas", "type":"exposed", "account":"..."}'
 
-$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-exposed_int "0 * * * *" '{"service":"aliyun_sas", "type":"risks", "account":"..."}'
+$ ./secops_common/bin/schedule splunk-pipeline-aliyun-sas-risk_{account} "0 * * * *" '{"service":"aliyun_sas", "type":"risks", "account":"..."}'
 
 ```
 

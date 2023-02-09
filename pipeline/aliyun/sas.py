@@ -161,7 +161,7 @@ def _fetch_alerts(num, unit, account):
     new = new_events(with_events, _get_alert_id, 'aliyun_sas_log_dedup')
 
     logger.info(
-        f'Total of {len(alarms)} fetched from Aliyn out of which {len(new)} are new'
+        f'Total of {len(alarms)} alerts fetched from Aliyn for {account} account out of which {len(new)} are new'
     )
 
     return new
@@ -184,7 +184,7 @@ def _fetch_leaks(num, unit, account):
     inc_account = list(map(partial(with_account, account), new))
 
     logger.info(
-        f'Total of {len(leaks)} leaks fetched from Aliyn out of which {len(new)} are new'
+        f'Total of {len(leaks)} leaks fetched from Aliyn {account} account out of which {len(new)} are new'
     )
 
     return inc_account
@@ -206,7 +206,7 @@ def _publish_sas_alerts(num, unit, account):
 
     if (len(new) > 0):
         logger.info(
-            f'Total of {len(new)} alerts persisted into Splunk from Aliyun SAS'
+            f'Total of {len(new)} alerts persisted into Splunk from Aliyun SAS {account} account'
         )
 
     mark_events(new, _get_alarm_id, 'aliyun_sas_log_dedup')
@@ -224,7 +224,8 @@ def _publish_sas_leaks(num, unit, account):
 
     if (len(new) > 0):
         logger.info(
-            f'Total of {len(new)} leaks persisted into Splunk from Aliyun SAS')
+            f'Total of {len(new)} leaks persisted into Splunk from Aliyun SAS {account} account'
+        )
 
     mark_events(new, _get_leak_id, 'aliyun_sas_leaks_log_dedup')
 
@@ -240,7 +241,7 @@ def _publish_sas_exposed(account):
         publish(http, batch, splunk_token, sourcetype_field='Source')
 
     logger.info(
-        f'Total of {len(new)} exposed instances persisted into Splunk from Aliyun SAS'
+        f'Total of {len(new)} exposed instances persisted into Splunk from Aliyun SAS {account} account'
     )
 
 
@@ -255,7 +256,7 @@ def _publish_sas_risks(account):
         publish(http, batch, splunk_token, sourcetype_field='Source')
 
     logger.info(
-        f'Total of {len(new)} risk items persisted into Splunk from Aliyun SAS'
+        f'Total of {len(new)} risk items persisted into Splunk from Aliyun SAS account {account}'
     )
 
 
