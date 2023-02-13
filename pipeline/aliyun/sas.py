@@ -161,7 +161,7 @@ def _fetch_alerts(num, unit, account):
     new = new_events(with_events, _get_alert_id, 'aliyun_sas_log_dedup')
 
     logger.info(
-        f'Total of {len(alarms)} alerts fetched from Aliyn for {account} account out of which {len(new)} are new'
+        f'Total of {len(alarms)} alerts fetched from Aliyun for {account} account out of which {len(new)} are new'
     )
 
     return new
@@ -184,7 +184,7 @@ def _fetch_leaks(num, unit, account):
     inc_account = list(map(partial(with_account, account), new))
 
     logger.info(
-        f'Total of {len(leaks)} leaks fetched from Aliyn {account} account out of which {len(new)} are new'
+        f'Total of {len(leaks)} leaks fetched from Aliyun {account} account out of which {len(new)} are new'
     )
 
     return inc_account
