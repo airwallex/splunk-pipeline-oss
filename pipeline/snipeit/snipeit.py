@@ -1,7 +1,7 @@
 import pprint
 import click
 
-from helper import SnipeIT, DEFAULT_RESULT_LIMIT
+from pipeline.snipeit.helper import SnipeIT, DEFAULT_RESULT_LIMIT
 
 import uuid
 from datetime import datetime, timezone
