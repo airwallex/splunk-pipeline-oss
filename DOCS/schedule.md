@@ -14,6 +14,8 @@ $ ./secops_common/bin/schedule splunk-pipeline-spreadsheet "*/5 * * * *" '{"serv
 
 $ ./secops_common/bin/schedule splunk-pipleline-ms_graph_inventory "*/20 * * * *" '{"service":"ms_graph_inventory"}'
 
+$ ./secops_common/bin/schedule splunk-pipleline-snipeit "*/60 * * * *" '{"service":"snipeit"}'
+
 # workspace
 $ ./secops_common/bin/schedule splunk-pipeline-google_workspace_login "*/5 * * * *" '{"service":"workspace", "type":"login"}'
 

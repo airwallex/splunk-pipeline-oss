@@ -19,6 +19,7 @@ All fetchers store the last fetched events dates and update them continuously, t
 | [Spreadsheet](../pipeline/spreadsheet.py) | Publish any Google spreadsheet rows into Splunk as events. |
 | [Google Workspace](../pipeline/workspace.py) | Publish Google workspace audit logs (Drive, Calendar, Login [etc..](https://support.google.com/a/answer/9725452?hl=en&ref_topic=9027054)) into Splunk. |
 | [MS Intune inventory collector](../pipeline/ms_graph_inventory.py) | Publish AZ users, devices, groups and intune managed devices |
+| [SnipeIT](../pipeline/snipeit/snipeit.py) | Publish SnipeIT users and assets (hardware) devices. |
 
 ## Historical import
 

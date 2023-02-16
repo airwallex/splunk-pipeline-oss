@@ -47,6 +47,8 @@ from pipeline.ms_graph_inventory import _publish_and_download_intune
 # Aliyun
 from pipeline.aliyun.sas import _publish_sas
 
+# SnipeIT
+from pipeline.snipeit.snipeit import _publish_snipeit
 
 class Service(Enum):
     confluence = auto()
@@ -60,6 +62,7 @@ class Service(Enum):
     bamboo = auto()
     ms_graph_inventory = auto()
     aliyun_sas = auto()
+    snipeit = auto()
 
 
 def into_service(string):
@@ -90,6 +93,8 @@ def trigger_processing(payload):
         _publish_and_download_intune()
     elif service == Service.aliyun_sas:
         _publish_sas(30, 'days', payload['type'], payload['account'])
+    elif service == Service.snipeit:
+        _publish_snipeit()
 
 
 """ Processing messages in the cloud function:
