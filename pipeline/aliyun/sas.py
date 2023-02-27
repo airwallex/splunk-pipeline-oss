@@ -246,7 +246,7 @@ def _publish_sas_exposed(account):
 
 
 def _publish_sas_risks(account):
-    new = _fetch_exposed(account)
+    new = _fetch_risks(account)
     sourced = list(map(partial(with_source, 'aliyun:sas:config'), new))
     batches = partition(sourced, BATCH_SIZE)
 
