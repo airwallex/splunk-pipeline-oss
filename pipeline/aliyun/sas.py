@@ -321,7 +321,7 @@ def publish_alerts(num, unit):
 @click.option("--unit", required=True)
 @click.option("--account", required=True)
 def publish_leaks(num, unit, account):
-    _publish_sas_leaks(num, unit)
+    _publish_sas_leaks(num, unit, account)
 
 
 @cli.command()

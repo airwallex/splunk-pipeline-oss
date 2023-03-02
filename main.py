@@ -50,6 +50,7 @@ from pipeline.aliyun.sas import _publish_sas
 # SnipeIT
 from pipeline.snipeit.snipeit import _publish_snipeit
 
+
 class Service(Enum):
     confluence = auto()
     spreadsheet = auto()
