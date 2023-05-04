@@ -50,6 +50,9 @@ from pipeline.aliyun.sas import _publish_sas
 # SnipeIT
 from pipeline.snipeit.snipeit import _publish_snipeit
 
+# Fleet
+from pipeline.fleet import _publish_fleet_logs
+
 
 class Service(Enum):
     confluence = auto()
@@ -65,6 +68,7 @@ class Service(Enum):
     ms_graph_inventory = auto()
     aliyun_sas = auto()
     snipeit = auto()
+    fleet = auto()
 
 
 def into_service(string):
@@ -99,6 +103,8 @@ def trigger_processing(payload):
         _publish_sas(30, 'days', payload['type'], payload['account'])
     elif service == Service.snipeit:
         _publish_snipeit()
+    elif service == Service.fleet:
+        _publish_fleet_logs()
 
 
 """ Processing messages in the cloud function:

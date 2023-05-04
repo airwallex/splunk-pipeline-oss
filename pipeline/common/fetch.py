@@ -75,3 +75,31 @@ def mark_last_fetch(start, end, status, table):
         logger.debug(
             f'Fetching of {table} logs had failed for start {start} - {end} range'
         )
+
+
+# ID-based fetcher
+
+
+def last_from_id(_get_logs, table):
+    # Making sure table is set
+    get_table(table)
+    rows = latest_rows(table)
+    # Fetching for the very first time (first ID)
+    if rows.total_rows == 0:
+        return _get_logs(0), 0
+    # Progressing 5 min on top of the persisted data
+    else:
+        logger.debug(f'Fetching last ID value from bigquery')
+        id = list(list(next(rows.pages))[0])[0]
+        logger.debug(f'ID is {id}')
+
+        return _get_logs(id), id
+
+
+def mark_last_fetch_id(id, event_count, table):
+    stamp = datetime.now(tz=timezone.utc)
+
+    if (event_count == 0):
+        insert_rows([[id, False, stamp]], table)
+    else:
+        insert_rows([[id, True, stamp]], table)
