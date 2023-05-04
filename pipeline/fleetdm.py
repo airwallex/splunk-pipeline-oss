@@ -21,8 +21,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 project_id = CONFIG['project_id']
 
-token = read_config(project_id, 'fleet')['token']
-splunk_token = read_config(project_id, 'fleet')['splunk']
+token = read_config(project_id, 'fleetdm')['token']
+splunk_token = read_config(project_id, 'fleetdm')['splunk']
 
 
 @click.group()
@@ -44,6 +44,7 @@ def get_result(response):
         return response.json()['activities']
 
 
+# Collect logs with IDs bigger than specified ID
 def from_id(result, id):
     recent_result = []
     curr_id = result[0]['id']
@@ -59,6 +60,7 @@ def from_id(result, id):
     return (curr_id, recent_result)
 
 
+# Add Splunk event metadata
 def _extras_into_event(sourcetype, batch_id, value):
     timestamp = unix_time_millis(
         datetime.strptime(value['created_at'],
@@ -74,12 +76,14 @@ def _extras_into_event(sourcetype, batch_id, value):
 def _get_logs(id):
     prev_id = int(id)
 
-    logger.debug(f'Getting logs from Fleet from ID {prev_id} (non-inclusive)')
+    logger.debug(
+        f'Getting logs from FleetDM from ID {prev_id} (non-inclusive)')
     results = []
     index = 0
 
     url = base + endpoint.format(index=index)
-    response = requests.get(url, headers=headers)
+    http = retryable()
+    response = http.get(url, headers=headers)
 
     result = get_result(response)
     latest_id = result[0]['id']
@@ -88,38 +92,40 @@ def _get_logs(id):
         curr_id, recent_result = from_id(result, prev_id)
         results.extend(recent_result)
 
+    # Pagination
     while (response.json()['meta']['has_next_results'] != False
            and curr_id > prev_id):
         index += 1
         url = base + endpoint.format(index=index)
-        response = requests.get(url, headers=headers)
+        response = http.get(url, headers=headers)
 
         result = get_result(response)
         if (result != None):
             curr_id, recent_result = from_id(result, prev_id)
             results.extend(recent_result)
 
-    logger.debug(f'Total of {len(results)} logs fetched in _get_logs Fleet')
+    logger.debug(f'Total of {len(results)} logs fetched in _get_logs FleetDM')
 
     return results, latest_id
 
 
-def _publish_fleet_logs(id):
+def _publish_fleetdm_logs(id):
     if (int(id) >= 0):
-        logger.info(f'Publishing Fleet logs from ID {id} (non-inclusive)')
+        logger.info(f'Publishing FleetDM logs from ID {id} (non-inclusive)')
 
         (logs, latest_id) = _get_logs(id)
 
     else:
-        logger.info(f'Publishing Fleet logs from last fetch ID')
+        logger.info(f'Publishing FleetDM logs from last fetch ID')
 
         (logs, latest_id), prev_id = last_from_id(_get_logs, 'fleet_log_fetch')
 
-    logger.info(f'Total of {len(logs)} fetched from Fleet')
+    logger.info(f'Total of {len(logs)} fetched from FleetDM')
 
+    # Publish to Splunk
     batch_id = uuid.uuid4().hex
     events = list(
-        map(partial(_extras_into_event, 'fleet_activity_logs', batch_id),
+        map(partial(_extras_into_event, 'fleetdm_activity_logs', batch_id),
             logs))
     batches = partition(events, 50)
     http = retryable()
@@ -131,8 +137,9 @@ def _publish_fleet_logs(id):
                 sourcetype_field='sourcetype_override')
 
     if (len(logs) > 0):
-        logger.info(f'Total of {len(logs)} persisted into Splunk from Fleet')
+        logger.info(f'Total of {len(logs)} persisted into Splunk from FleetDM')
 
+    # Store last fetched ID in bigquery
     if (int(id) < 0):
         mark_last_fetch_id(latest_id, len(logs), 'fleet_log_fetch')
 
@@ -140,7 +147,7 @@ def _publish_fleet_logs(id):
 @cli.command()
 @click.option("--id", required=True)
 def publish_logs(id):
-    _publish_fleet_logs(id)
+    _publish_fleetdm_logs(id)
 
 
 @cli.command()
@@ -151,12 +158,12 @@ def purge():
 @cli.command()
 @click.option("--id", required=True)
 def get_logs(id):
-    if (int(id) > 0):
+    if (int(id) >= 0):
         (logs, _) = _get_logs(id)
     else:
         (logs, latest_id), prev_id = last_from_id(_get_logs, 'fleet_log_fetch')
 
-    logger.info(f'Total of {len(logs)} logs fetched from Fleet')
+    logger.info(f'Total of {len(logs)} logs fetched from FleetDM')
 
 
 if __name__ == '__main__':
