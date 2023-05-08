@@ -18,6 +18,8 @@ $ ./secops_common/bin/schedule splunk-pipleline-ms_graph_inventory "*/20 * * * *
 
 $ ./secops_common/bin/schedule splunk-pipleline-snipeit "*/60 * * * *" '{"service":"snipeit"}'
 
+$ ./secops_common/bin/schedule splunk-pipleline-fleetdm "*/10 * * * *" '{"service":"fleetdm"}'
+
 # workspace
 $ ./secops_common/bin/schedule splunk-pipeline-google_workspace_login "*/5 * * * *" '{"service":"workspace", "type":"login"}'
 

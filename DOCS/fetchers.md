@@ -21,6 +21,7 @@ All fetchers store the last fetched events dates and update them continuously, t
 | [MS Intune inventory collector](../pipeline/ms_graph_inventory.py) | Publish AZ users, devices, groups and intune managed devices |
 | [SnipeIT](../pipeline/snipeit/snipeit.py) | Publish SnipeIT users and assets (hardware) devices. |
 | [Aliyun SAS](../pipeline/aliyun/sas.py) | Publish Aliyun [SAS](https://www.alibabacloud.com/product/security-center) alerts/leaks/exposed/risks. |
+| [FleetDM](../pipeline/fleetdm.py) | FleetDM activity logs. |
 
 ## Historical import
 
