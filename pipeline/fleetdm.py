@@ -20,6 +20,7 @@ import click
 pp = pprint.PrettyPrinter(indent=4)
 
 project_id = CONFIG['project_id']
+base = CONFIG['fleetdm_base']
 
 token = read_config(project_id, 'fleetdm')['token']
 splunk_token = read_config(project_id, 'fleetdm')['splunk']
@@ -30,7 +31,6 @@ def cli():
     pass
 
 
-base = f'https://fleet.awx.tech'
 headers = {"Authorization": f"Bearer {token}"}
 endpoint = '/api/v1/fleet/activities?page={index}&per_page=100&order_key=id&order_direction=desc'
 
