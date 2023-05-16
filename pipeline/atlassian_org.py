@@ -74,7 +74,8 @@ def _get_atlassian_audit_logs(params):
 
     results = curr_results
     next_url = json_resp['links'].get('next')
-    next_url = next_url.replace('/v1', '', 1)
+    if next_url:
+        next_url = next_url.replace('/v1', '', 1)
 
     while next_url:
         logger.info('Getting page at {}...'.format(next_url))
