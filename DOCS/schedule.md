@@ -6,7 +6,9 @@ $ ./secops_common/bin/schedule splunk-pipeline-confluence "*/5 * * * *" '{"servi
 # Maxmind updates ASN data once a week https://support.maxmind.com/hc/en-us/articles/4408216129947-Download-and-Update-Databases
 $ ./secops_common/bin/schedule splunk-pipeline-maxmind "0 0 * * 5" '{"service":"maxmind"}'
 
-$ ./secops_common/bin/schedule splunk-pipeline-bamboo "0 */4 * * *" '{"service":"bamboo"}'
+$ ./secops_common/bin/schedule splunk-pipeline-bamboo-kv "0 */4 * * *" '{"service":"bamboo_kv"}'
+
+$ ./secops_common/bin/schedule splunk-pipeline-bamboo-hec "*/10 * * * *" '{"service":"bamboo_hec"}'
 
 $ ./secops_common/bin/schedule splunk-pipeline-jira "*/5 * * * *" '{"service":"jira"}'
 

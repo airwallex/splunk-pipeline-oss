@@ -10,7 +10,7 @@ All fetchers store the last fetched events dates and update them continuously, t
 | Service |  Description |
 |---------|--------------|
 | [Atlassian Org](../pipeline/atlassian_org.py) | Org level audit logs from Atlassian. |
-| [Bamboo](../pipeline/bamboo.py) |Bambooe employee kv store enrichment. |
+| [Bamboo](../pipeline/bamboo.py) |Bamboo employee kv store enrichment and HEC ingestion. |
 | [Confluence](../pipeline/confluence.py) | Confluence audit logs. |
 | [Gmail](../pipeline/gmail.py) |Fetching Gmail logs from BQ table [see](https://support.google.com/a/topic/7233311?hl=en&ref_topic=2683886). |
 | [Jira](../pipeline/jira.py) | Jira audit logs. |
