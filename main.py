@@ -60,7 +60,8 @@ class Service(Enum):
     google_workspace = auto()
     gmail = auto()
     maxmind = auto()
-    bamboo = auto()
+    bamboo_kv = auto()
+    bamboo_hec = auto()
     ms_graph_inventory = auto()
     aliyun_sas = auto()
     snipeit = auto()
@@ -88,8 +89,10 @@ def trigger_processing(payload):
         _publish_gmail_logs(-1, 'minutes')
     elif service == Service.maxmind:
         _publish_and_download_maxmind()
-    elif service == Service.bamboo:
-        _publish_and_download_bamboo()
+    elif service == Service.bamboo_kv:
+        _publish_and_download_bamboo('kv_store')
+    elif service == Service.bamboo_hec:
+        _publish_and_download_bamboo('hec')
     elif service == Service.ms_graph_inventory:
         _publish_and_download_intune()
     elif service == Service.aliyun_sas:

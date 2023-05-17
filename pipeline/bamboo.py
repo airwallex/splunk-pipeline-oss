@@ -80,20 +80,23 @@ def _fetch():
         return employees
 
 
-def _process(records):
+def _process(records, destination):
     http = retryable()
-    logger.info('Emptying kv_hr_info')
-    empty_collection(http, 'kv_hr_info', splunk_api_token)
-    batches = partition(list(records), 100)
-    logger.info(f'Populating kv_hr_info')
 
-    for batch in batches:
-        insert_batch_kv(http, 'kv_hr_info', batch, splunk_api_token)
+    if destination == 'kv_store':
+        logger.info('Emptying kv_hr_info')
+        empty_collection(http, 'kv_hr_info', splunk_api_token)
+        batches = partition(list(records), 100)
+        logger.info(f'Populating kv_hr_info')
 
-    batches = partition(list(records), 500)
+        for batch in batches:
+            insert_batch_kv(http, 'kv_hr_info', batch, splunk_api_token)
+    elif destination == 'hec':
+        batches = partition(list(records), 500)
+        logger.info(f'Ingesting logs through HEC')
 
-    for batch in batches:
-        publish(http, batch, splunk_token)
+        for batch in batches:
+            publish(http, batch, splunk_token)
 
     logger.info(f'Total of {len(records)} persisted into Splunk from Bamboo')
 
@@ -103,13 +106,14 @@ def fetch():
     pp.pprint(list(_fetch()))
 
 
-def _publish_and_download_bamboo():
-    _process(list(_fetch()))
+def _publish_and_download_bamboo(destination):
+    _process(list(_fetch()), destination)
 
 
 @cli.command()
-def process():
-    _publish_and_download_bamboo()
+@click.option("--destination", required=True)
+def process(destination):
+    _publish_and_download_bamboo(destination)
 
 
 if __name__ == '__main__':
