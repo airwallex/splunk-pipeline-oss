@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" List Aliyun VM related metrics """
+""" Aliyun SAS related findings """
 
 from secops_common.secrets import read_config
 
