@@ -12,7 +12,7 @@ This project is actively used and maintained by Airwallex Infosec team <img src=
 
 # Copyright and license
 
-Copyright [2022] [Airwallex (Hong Kong) Limited]
+Copyright [2023] [Airwallex (Hong Kong) Limited]
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
