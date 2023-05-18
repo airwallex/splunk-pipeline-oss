@@ -1,7 +1,8 @@
 19/05/2023:
 
-* Adding a new Aliyun SAS fetcher
-* Adding a SnipeIT fetcher
+* New Aliyun SAS fetcher.
+* New MS Intune inventory fetcher
+* New SnipeIT fetcher.
 * Adding support for both HEC and KV store for Bamboo
 
 
