@@ -1,5 +1,6 @@
 19/05/2023:
 
+* Adding a new [FleetDM](pipeline/fleetdm.py) fetcher.
 * Adding a new [Aliyun SAS](pipeline/aliyun/sas.py) fetcher.
 * Adding a new [MS Intune inventory collector](pipeline/ms_graph_inventory.py) fetcher.
 * Adding a new [SnipeIT](pipeline/snipeit/snipeit.py) fetcher.
